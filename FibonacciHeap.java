@@ -180,21 +180,28 @@ public class FibonacciHeap
 			}
 		}
 
-	public void make_children_roots(HeapNode node) {
-		boolean is_first_run = true;
-		HeapNode first_child = this.min.child;
-		HeapNode curr_child = this.min.child;
-        while (curr_child.next != curr_child && (is_first_run || curr_child != first_child)) {
-					is_first_run = false;
-					HeapNode saver = curr_child.next;
-                    this.merge_root_list(curr_child);
-					curr_child.parent = null;
-					if (curr_child.next != null && saver != this.min && saver != first_child){ curr_child = saver; }
-					else { break; }
-                }
-				if (curr_child.next == curr_child) {
-					this.merge_root_list(curr_child); 
-				}
+
+	/**
+	 * make all children of a node roots
+	 * complexity W.C O(logn) amortized O(1)
+	 */
+	public void make_children_roots(HeapNode node) { //in fibonacci heap max children per node is logn
+		if (node.child != null){
+			boolean is_first_run = true;
+			HeapNode first_child = node.child;
+			HeapNode curr_child = node.child;
+			while (curr_child.next != curr_child && (is_first_run || curr_child != first_child)) {
+				is_first_run = false;
+				HeapNode saver = curr_child.next;
+				this.merge_root_list(curr_child);
+				curr_child.parent = null;
+				if (curr_child.next != null && saver != node && saver != first_child){ curr_child = saver; }
+				else { break; }
+			}
+			if (curr_child.next == curr_child) {
+				this.merge_root_list(curr_child); 
+			}
+		}
 	}
 
 
@@ -238,7 +245,7 @@ public class FibonacciHeap
  */
     public void cascading_cut(HeapNode node){
 		HeapNode parent = node.parent;
-        if (parent != null) {
+        if (parent != null) { //is child of a node
             if (node.mark == false) {
                 node.mark = true;
             }
@@ -284,7 +291,7 @@ public class FibonacciHeap
 	}
 
 	/**
-	 * Delete the x from the heap.
+	 * delete the x from the heap.
 	 * complexity W.C O(logn) amortized O(1)
 	 */
 	public void delete(HeapNode x)
@@ -295,18 +302,23 @@ public class FibonacciHeap
 		}
 		else {
 			if (x.parent == null){ // is a root
-				remove_from_root_list(x);
+				this.remove_from_root_list(x);
+				if (x.child != null) {
+					HeapNode first = x.child;
+					while(x.child != null && x.child.next != first) {
+						this.cascading_cut(x.child);
+					}
+				}
 			}
-			HeapNode child = x.child; //make children of x roots
-			while (child != null) {
-				HeapNode nextChild = child.next;
-				merge_root_list(child);
-				child.parent = null;
-				child.mark = false;
-				child = nextChild;
+			else { // not a root 
+				while (x.child != null) { //has max logn children
+					this.cascading_cut(x);
+					this.cascading_cut(x.child);
+				}
+				this.remove_from_root_list(x);
 			}
-    		this.n--;
 		}
+    	this.n--;
 	}
 
 	/**
