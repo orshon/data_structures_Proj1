@@ -27,9 +27,9 @@ public class FibonacciHeap
 		this.roots_num = 0; //number of roots
 	}
 
-   /** pre: node in the heap. merge node into the root list. */
-    //complexity is O(1)
-
+    /** pre: node in the heap. merge node into the root list.
+     * complexity is O(1)
+	 */
 	public void merge_root_list(HeapNode node){
 		if (this.root_list == null){
 			this.root_list = node;
@@ -53,7 +53,7 @@ public class FibonacciHeap
 			node.next = node;
             node.prev = node;
 			}
-        else{ //inserting based on rank as instructed
+        else{ 
 			node.next = parent.child.next;
 			node.prev = parent.child;
 			parent.child.next.prev = node;
@@ -91,10 +91,8 @@ public class FibonacciHeap
 	 * remove root from root list field
 	 * complexity O(1)
 	 */
-
     public void remove_from_root_list(HeapNode node) {
         if (node == this.root_list) { this.root_list = node.next; }
-		//if (node == this.min) { this.min = node.next; }
         node.prev.next = node.next;
         node.next.prev = node.prev;
 		this.roots_num--;
@@ -114,100 +112,89 @@ public class FibonacciHeap
 		y.mark = false;
 	}
 
-  /**
-	*   function to iterate through a doubly linked list
-	*/
-    public void iterate(HeapNode head) {
-        HeapNode node = head;
-        HeapNode stop = head;
-        boolean flag = false;
-        while (true) {
-            if (node == stop && flag == true){ break; }
-			else if (node == stop){ flag = true; }
-            node = node.next;
-		}
-	}
-
 	/**
 	 *  combine root nodes of same degree to consolidate the heap by creating an arr of binomial trees
 	 *  complexity W.C O(n), amortized O(logn)
 	 */
-
 	public void consolidate() {
 		HeapNode[] Arr = new HeapNode[(int)(Math.log(this.n) * 2 + 1)];
-		HeapNode[] nodes = new HeapNode[this.roots_num]; //W.C n roots
 		if (this.roots_num == 0 || this.root_list == null) { return; }
-		nodes[0] = this.root_list;
 		HeapNode current = this.root_list;
-		//for (int i = 0; i < this.roots_num; i++) {
-        //    System.out.print("curr = " + current.key + " -> ");
-        //    current = current.next;
-        //}
-		int index = 0;
+		int cnt = 0;
+		int original_roots_num = this.roots_num;
 		do {
-    		nodes[index++] = current;
-    		current = current.next;
-		} while (current != this.root_list && index < this.roots_num);
-		for (int i = 0; i < index; i++) {
-				HeapNode x = nodes[i];
-				int x_rank = x.rank;
-				while (Arr[x_rank] != null) {// doesnt this make it nlogn? :(
-					HeapNode y = Arr[x_rank];
-					if (x.key > y.key) {
-						HeapNode temp = x;
-						x = y;
-						y = temp;
-					}
-					create_link(y, x);
-					Arr[x_rank] = null;
-					x_rank++;
+    		HeapNode x = current;
+    		int x_rank = x.rank;
+			HeapNode saver = x.next;
+			while (Arr[x_rank] != null) { // check if there is already a node with the same rank
+				HeapNode y = Arr[x_rank];
+				if (x.key > y.key) {
+					HeapNode temp = x;
+					x = y;
+					y = temp;
 				}
-				Arr[x_rank] = x;
+				create_link(y, x);
+				Arr[x_rank] = null;
+				x_rank++;
 			}
-			//for (int i=0; i < Arr.length; i++) {
-			//	if (Arr[i] != null) {
-			//		if (Arr[i].key < this.min.key) { this.min = Arr[i]; }
-			//	}
-			//}
-			 // Reconstruct root list and find new minimum
-			this.min = null;
-			for (HeapNode node : Arr) {
-				if (node != null) {
-					if (this.min == null || node.key <= this.min.key) {
-						this.min = node;
-					}
-				}
-			}
-		}
-
+			Arr[x_rank] = x;
+			current = saver;
+			cnt++;
+			
+    	} while (current != this.root_list && cnt < original_roots_num);
+    //find the new minimum node
+    this.min = null;
+    for (HeapNode node : Arr) {
+        if (node != null) {
+            if (this.min == null || node.key <= this.min.key) {
+                this.min = node;
+            }
+        }
+    }
+}
 
 	/**
 	 * make all children of a node roots
-	 * complexity W.C O(logn) amortized O(1)
+	 * complexity W.C and amortized O(logn) 
 	 */
-	public void make_children_roots(HeapNode node) { //in fibonacci heap max children per node is logn
-		if (node.child != null){
-			boolean is_first_run = true;
-			HeapNode first_child = node.child;
-			HeapNode curr_child = node.child;
-			while (curr_child.next != curr_child && (is_first_run || curr_child != first_child)) {
-				is_first_run = false;
-				HeapNode saver = curr_child.next;
-				this.merge_root_list(curr_child);
-				curr_child.parent = null;
-				if (curr_child.next != null && saver != node && saver != first_child){ curr_child = saver; }
-				else { break; }
-			}
-			if (curr_child.next == curr_child) {
-				this.merge_root_list(curr_child); 
-			}
-		}
+	public void make_children_roots(HeapNode node) { 
+		if (node.child != null) {
+			HeapNode firstChild = node.child;
+			HeapNode currentChild = firstChild;
+			do {
+				HeapNode saver = currentChild.next;
+				currentChild.parent = null;
+				currentChild.mark = false;
+				this.merge_root_list(currentChild);
+				currentChild = saver;
+			} while (currentChild != firstChild);
+			node.child = null;
+			node.rank = 0;
+    	}
 	}
 
+/**
+ * find new min in the heap
+ * complexity W.C O(n) amortized O(logn)
+ */
+	public void findNewMin(){
+		HeapNode current = this.root_list;
+		HeapNode newMin = this.min;
+		if (this.min.next == this.min){ return; }
+		if (this.root_list != null) {
+			do {
+				if (current.key < newMin.key) {
+					newMin = current;  // update minimum if a smaller node is found.
+				}
+				current = current.next;
+			} while (current != this.root_list); 
+			this.min = newMin;
+    	}
+	}
 
 	/**
 	 * Delete the minimal item
-	 * complexity O(logn)
+	 * complexity W.C O(n) amortized O(logn)
 	 */
 	public void deleteMin()
 	{
@@ -216,32 +203,24 @@ public class FibonacciHeap
 				this.make_children_roots(this.min);
             }
 			this.remove_from_root_list(this.min);
-			if (this.min == this.min.next && this.min.child == null) { //min_node is the only root wiht no children
+			if (this.min == this.min.next && this.min.child == null) { //min_node is the only root with no children
                 this.min = null;
                 this.root_list = null;
 				this.roots_num = 0;
-				this.n = 0;
+				this.n = 1;
             }
 			else{
-                this.min = this.min.next;
-				HeapNode current = this.root_list;
-				int cnt = 0;
-				while (cnt < roots_num && current.next != null && current.next != current) {
-					cnt++;
-					if (this.min.key >= current.key) {
-						this.min = current;
-					}
-					current = current.next;
-				}
-                this.consolidate();
-				this.n--;
-            }
+				this.min = this.min.next;
+				this.findNewMin();
+			}
+            this.consolidate();
+			this.n--;
         }
     }
 
 /** 
  * cut node from parent and add to root list
- * complexity W.C O(logn) amortized O(1)
+ * complexity W.C O(n) amortized O(1)
  */
     public void cascading_cut(HeapNode node){
 		HeapNode parent = node.parent;
@@ -256,25 +235,28 @@ public class FibonacciHeap
         }
     }
 
+    
+
 /**
  * cut link between x and parent
  * complexity is O(1)
  */
     public void cut_link(HeapNode x, HeapNode parent){
+		HeapNode saver = x.next;
         x.parent = null; //make it so x isnt parent's child
 		x.prev.next = x.next;
 		x.next.prev = x.prev;
         parent.rank = parent.rank - 1;
-        this.merge_root_list(x); //updates root_num too
+        this.merge_root_list(x);
         x.mark = false;
 		if (x.next == x){ parent.child = null; }
-		else { parent.child = x.next;}
+		else { parent.child = saver;}
 		
     }
 	/**
 	 * pre: 0<diff<x.key
 	 * Decrease the key of x by diff and fix the heap.
-     * complexity: amortized O(1)
+     * complexity: W.C O(n) amortized O(1)
 	 */
 	public void decreaseKey(HeapNode x, int diff)
     {
@@ -284,15 +266,13 @@ public class FibonacciHeap
     	if (parent != null && x.key < parent.key) {
             this.cut_link(x, parent);
             this.cascading_cut(parent);
-			System.out.println("enetereddddddddddddddd");
-			this.printHeap();
         }
         if (x.key <= this.min.key) { this.min = x; }
 	}
 
 	/**
 	 * delete the x from the heap.
-	 * complexity W.C O(logn) amortized O(1)
+	 * complexity W.C and amortized O(logn)
 	 */
 	public void delete(HeapNode x)
 	{
@@ -301,24 +281,12 @@ public class FibonacciHeap
 			this.deleteMin(); //deletes min and consolidates
 		}
 		else {
-			if (x.parent == null){ // is a root
-				this.remove_from_root_list(x);
-				if (x.child != null) {
-					HeapNode first = x.child;
-					while(x.child != null && x.child.next != first) {
-						this.cascading_cut(x.child);
-					}
-				}
+			if (x.child != null) {
+				this.make_children_roots(x);
 			}
-			else { // not a root 
-				while (x.child != null) { //has max logn children
-					this.cascading_cut(x);
-					this.cascading_cut(x.child);
-				}
-				this.remove_from_root_list(x);
-			}
+			this.remove_from_root_list(x);
+			this.n--;
 		}
-    	this.n--;
 	}
 
 	/**
@@ -394,89 +362,6 @@ public class FibonacciHeap
             this.rank = 0;
             this.mark = false;
         }
-
-		public int getKey() { return this.key; }
+	
 	}
- 
-	public void printHeap() {
-		if (this.root_list == null) {
-			System.out.println("Heap is empty.");
-			return;
-		}
-		System.out.println("Fibonacci Heap Structure:");
-		HeapNode current = this.root_list;
-		do {
-			printNode(current, 0); // Start printing from the root list
-			current = current.next;
-		} while (current != this.root_list);
-	}
-
-	// Helper method to print a single node and its children recursively
-	private void printNode(HeapNode node, int depth) {
-		
-		// Print indentation based on depth level
-		for (int i = 0; i < depth; i++) {
-			System.out.print("    "); // 4 spaces per depth level
-		}
-		System.out.println("Node key: " + node.key + ", Rank: " + node.rank + ", Mark: " + node.mark);
-		if (node.child != null) {
-			HeapNode child = node.child;
-			do {
-				printNode(child, depth + 1); // Recursive call for each child
-				child = child.next;
-			} while (child != node.child); // Traverse all siblings in the circular list
-		}
-	}
-
-public int potential() {
-		int t = 0; // Number of trees (roots)
-		int m = 0; // Number of marked nodes
-		HeapNode current = min;
-
-		if (current != null) {
-			// Traverse the circular linked list of roots
-			do {
-				t++; // Each root is a tree
-				m += countMarkedNodes(current); // Count marked nodes in the tree
-				current = current.next;
-			} while (current != min);
-		}
-
-		return t + 2 * m; // Potential is t + 2 * m
-	}
-
-	// Helper method to count marked nodes in a tree
-	private int countMarkedNodes(HeapNode node) {
-		int count = 0;
-		while (node != null) {
-			if (node.mark) count++; // Increment if the node is marked
-			node = node.child;
-		}
-		return count;
-	}
-
-	public int[] countersRep() {
-		int[] counters = new int[calculateMaxRank()]; // Array to store the number of trees of each rank
-		HeapNode current = min;
-
-		// Traverse the root list and count trees by rank
-		if (current != null) {
-			do {
-				int rank = current.rank;
-				counters[rank]++; // Increment the count of trees of this rank
-				current = current.next;
-			} while (current != min);
-		}
-
-		return counters;
-	}
-
-	// Helper method to calculate the maximum possible rank (based on the number of nodes in the heap)
-	private int calculateMaxRank() {
-		return (int) Math.ceil(Math.log(this.n) / Math.log(2)) + 1;
-	}
-	public static void main(String[] args) {
-        Test tester = new Test();
-        tester.runAllTests();
-    }
 }
