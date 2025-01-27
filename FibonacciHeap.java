@@ -204,7 +204,7 @@ public class FibonacciHeap
             }
 			this.remove_from_root_list(this.min);
 			if (this.min == this.min.next && this.min.child == null) { //min_node is the only root with no children
-                this.min = null;
+				this.min = null;
                 this.root_list = null;
 				this.roots_num = 0;
 				this.n = 0;
@@ -215,7 +215,6 @@ public class FibonacciHeap
 				this.consolidate();
 				this.n--;
 			}
-            
         }
     }
 
@@ -248,7 +247,7 @@ public class FibonacciHeap
         parent.rank = parent.rank - 1;
         this.merge_root_list(x);
         x.mark = false;
-		if (x.next == x){ parent.child = null; }
+		if (saver == x){ parent.child = null; }
 		else { parent.child = saver;}
 		
     }
@@ -273,31 +272,34 @@ public class FibonacciHeap
 	 * delete the x from the heap.
 	 * complexity W.C O(n) and amortized O(logn)
 	 */
-		public void delete(HeapNode x) {
+	public void delete(HeapNode x)
+	{
 		if (x == null) { return; }
 		if (x == this.min) {
 			this.deleteMin(); //deletes min and consolidates
 		}
 		else {
-			if (x.child != null) { //if x has children, make them roots
-				this.make_children_roots(x);
-				this.remove_from_root_list(x);
-				this.n--;
-			}
-			else { //if x has no children
-				if (x.parent == null){ //if x is a root with no children
-					this.remove_from_root_list(x);
-					this.n--;
+			HeapNode curr_min = this.min;
+			decreaseKey(x, x.key); //decrease key to make it min
+			if (this.min != null) {
+				if (this.min.child != null) {
+					this.make_children_roots(this.min);
 				}
-				else { //if x is not a root and has no children
-					HeapNode parent = x.parent;
-					this.cut_link(x, x.parent);
-					this.cascading_cut(parent);
-					this.n--;
+				this.remove_from_root_list(this.min);
+				if (this.min == this.min.next && this.min.child == null) { //min_node is the only root with no children
+					this.min = null;
+					this.root_list = null;
+					this.roots_num = 0;
+					this.n = 0;
 				}
+				else{
+					this.n--;
+					this.min = curr_min;
+				}
+				
 			}
 		}
-
+	}
 
 	/**
 	 * Return the total number of links.
@@ -345,7 +347,7 @@ public class FibonacciHeap
 	 */
 	public int numTrees()
 	{
-		return 0; // should be replaced by student code
+		return this.roots_num; // should be replaced by student code
 	}
 
 	/**
@@ -372,6 +374,6 @@ public class FibonacciHeap
             this.rank = 0;
             this.mark = false;
         }
-	
 	}
+
 }
