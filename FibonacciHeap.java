@@ -273,24 +273,23 @@ public class FibonacciHeap
 	 * delete the x from the heap.
 	 * complexity W.C O(n) and amortized O(logn)
 	 */
-	public void delete(HeapNode x)
-	{
+		public void delete(HeapNode x) {
 		if (x == null) { return; }
 		if (x == this.min) {
 			this.deleteMin(); //deletes min and consolidates
 		}
 		else {
-			if (x.child != null) {
+			if (x.child != null) { //if x has children, make them roots
 				this.make_children_roots(x);
 				this.remove_from_root_list(x);
 				this.n--;
 			}
-			else {
-				if (x.parent == null){
+			else { //if x has no children
+				if (x.parent == null){ //if x is a root with no children
 					this.remove_from_root_list(x);
 					this.n--;
 				}
-				else {
+				else { //if x is not a root and has no children
 					HeapNode parent = x.parent;
 					this.cut_link(x, x.parent);
 					this.cascading_cut(parent);
@@ -298,7 +297,6 @@ public class FibonacciHeap
 				}
 			}
 		}
-	}
 
 
 	/**
