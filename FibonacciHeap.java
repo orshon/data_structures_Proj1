@@ -207,14 +207,15 @@ public class FibonacciHeap
                 this.min = null;
                 this.root_list = null;
 				this.roots_num = 0;
-				this.n = 1;
+				this.n = 0;
             }
 			else{
 				this.min = this.min.next;
 				this.findNewMin();
+				this.consolidate();
+				this.n--;
 			}
-            this.consolidate();
-			this.n--;
+            
         }
     }
 
@@ -234,8 +235,6 @@ public class FibonacciHeap
             }
         }
     }
-
-    
 
 /**
  * cut link between x and parent
@@ -272,7 +271,7 @@ public class FibonacciHeap
 
 	/**
 	 * delete the x from the heap.
-	 * complexity W.C and amortized O(logn)
+	 * complexity W.C O(n) and amortized O(logn)
 	 */
 	public void delete(HeapNode x)
 	{
@@ -283,11 +282,24 @@ public class FibonacciHeap
 		else {
 			if (x.child != null) {
 				this.make_children_roots(x);
+				this.remove_from_root_list(x);
+				this.n--;
 			}
-			this.remove_from_root_list(x);
-			this.n--;
+			else {
+				if (x.parent == null){
+					this.remove_from_root_list(x);
+					this.n--;
+				}
+				else {
+					HeapNode parent = x.parent;
+					this.cut_link(x, x.parent);
+					this.cascading_cut(parent);
+					this.n--;
+				}
+			}
 		}
 	}
+
 
 	/**
 	 * Return the total number of links.
